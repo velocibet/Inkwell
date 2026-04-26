@@ -105,7 +105,9 @@ const saveNote = async () => {
 
     noteStore.updateNoteInList(noteId.value, {
       title: noteTitle.value,
-      content: editor.value.getText().substring(0, 100)
+      content: editor.value.getText().substring(0, 100),
+      displayTitle: noteTitle.value,
+      displayContent: editor.value.getText().substring(0, 100)
     })
     
     // console.log("저장 완료!")
@@ -128,6 +130,16 @@ const triggerAutoSave = () => {
 onMounted(() => {
   setup(noteId.value)
 })
+
+watch(
+  () => authStore.masterKey,
+  (key) => {
+    if (key && noteId.value) {
+      setup(noteId.value)
+    }
+  },
+  { immediate: true }
+)
 
 watch(noteTitle, () => {
   if (!isLoading.value) {

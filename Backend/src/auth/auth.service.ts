@@ -20,11 +20,11 @@ export class AuthService {
       await client.query('BEGIN');
 
       const encryptedEmail = await this.encryptionService.encrypt(email);
-      const emailHash = this.encryptionService.hashEmail(email);
+      const emailHash = await this.encryptionService.hashEmail(email);
 
       const { rows: existingUser } = await client.query(
-        `SELECT username, email FROM users WHERE username = $1 OR email = $2`,
-        [username, encryptedEmail]
+        `SELECT username, email FROM users WHERE username = $1`,
+        [username]
       );
       
       if (existingUser.length > 0) {
@@ -51,6 +51,11 @@ export class AuthService {
       );
 
       const user = users[0];
+
+      await client.query(
+        `INSERT INTO email_hash (email, user_id) VALUES ($1, $2)`,
+        [emailHash, id]
+      );
 
       await client.query(
         `INSERT INTO vault_keys (id, vault_key_salt, encrypted_vault_key, vault_key_iv) VALUES ($1, $2, $3, $4)`,

@@ -39,7 +39,7 @@ const filteredNotes = computed(() => {
         } else if (currentTab.value === 'archive') {
           return note.is_archived
         } else {
-          return true
+          return !note.is_archived
         }
       }
     })
@@ -106,10 +106,32 @@ const deleteNote = async () => {
   if (confirm('Are you sure you want to delete this note?')) {
     try {
       await notesApi.deleteNote(id)
-      noteStore.setNotes(notes.value.filter(n => n.id !== id))
+      // noteStore.setNotes(notes.value.filter(n => n.id !== id))
+      noteStore.updateNoteInList(id, {
+        is_deleted: true,
+        deleted_at: new Date().toISOString()
+      })
     } catch (e) {
       console.error("삭제 실패:", e)
     }
+  }
+}
+
+const restoreNote = async () => {
+  const id = contextMenu.value.selectedId
+  if (!id) return
+
+  try {
+    await notesApi.restoreNote(id)
+
+    noteStore.updateNoteInList(id, {
+      is_deleted: false,
+      deleted_at: null
+    })
+
+    contextMenu.value.show = false
+  } catch (e) {
+    console.error(e)
   }
 }
 
@@ -481,14 +503,25 @@ onMounted(async () => {
         </button>
 
         <div class="menu-divider"></div>
-
-        <button @click="deleteNote" class="menu-item delete">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="3 6 5 6 21 6"></polyline>
-            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-          </svg>
-          Delete Note
-        </button>
+        <template v-if="currentTab === 'trash'">
+          <button @click="restoreNote" class="menu-item delete">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+            Restore Note
+          </button>
+        </template>
+        <template v-else>
+          <button @click="deleteNote" class="menu-item delete">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+            Delete Note
+          </button>
+        </template>
+        
       </div>
 
       <!-- Note Preview -->

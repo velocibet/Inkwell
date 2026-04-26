@@ -1,1 +1,16 @@
+node_modules
+npm-debug.log
+
+dist
+.nuxt
+.output
+
 .env
+*.sql
+*.gz
+backups/
+
+.git
+.gitignore
+README.md
+.vscode
