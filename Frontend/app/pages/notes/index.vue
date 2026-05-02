@@ -8,6 +8,7 @@ const noteStore = useNoteStore()
 
 const { notes } = storeToRefs(noteStore)
 // const notes = ref<Note[]>([])
+const isDesktop = computed(() => window.innerWidth > 1024)
 const isLoading = ref(true)
 const currentTab = ref('home')
 const searchQuery = ref<string>('')
@@ -189,7 +190,6 @@ const fetchNotes = async () => {
 const selectNote = (id: string) => {
   router.push(`/notes/${id}`)
 }
-
 
 const createNewNote = async () => {
   if (!authStore.masterKey) return
@@ -541,9 +541,10 @@ watch(
       </div>
 
       <!-- Note Preview -->
-      <div class="note-preview">
+      <!-- <div class="note-preview">
         <NuxtPage />
-      </div>
+      </div> -->
+      <!-- <NuxtPage v-if="isDesktop && route.params.id" /> -->
 
       <!-- Floating New Note Button -->
       <div @click="createNewNote" class="new-note-btn">
@@ -825,9 +826,9 @@ watch(
 
 /* Responsive */
 @media (max-width: 1024px) {
-  .note-preview {
+  /* .note-preview {
     display: none;
-  }
+  } */
 
   .notes-list {
     flex: 1;

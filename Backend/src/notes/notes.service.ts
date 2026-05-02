@@ -133,54 +133,68 @@ export class NotesService {
     return "Note restored successfully.";
   }
 
-  async shareNote(userId: string, noteId: string, createShareNoteDto: CreateShareNoteDto) {
-    const {
-      id,
-      iv,
-      encrypted_title,
-      encrypted_content,
-      is_burn_after_read,
-      expires_at
-    } = createShareNoteDto;
+  /**
+   * 비회원용 임시 노트 ID 발급
+   */
+  async createTempNoteId(ip: string, userAgent: string) {
+    const countCheck = await this.db.query(`
+      SELECT count(*) FROM temp_note_ids 
+      WHERE ip_address = $1 AND created_at > NOW() - INTERVAL '1 hour'
+    `, [ip]);
 
-    const ownershipCheck = await this.db.query(
-      `SELECT id FROM user_notes WHERE id = $1 AND user_id = $2`,
-      [noteId, userId]
-    );
-
-    if (ownershipCheck.rows.length < 1) {
-      throw new BadRequestException("Note does not exist or you do not have permission.");
+    // 1시간에 5개 제한 수고링~
+    if (parseInt(countCheck.rows[0].count) >= 5) {
+      throw new BadRequestException("Too many requests. Please try again in an hour.");
     }
 
+    const tempId = ulid();
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + 24);
+
+    await this.db.query(`
+      INSERT INTO temp_note_ids (id, ip_address, user_agent, expires_at)
+      VALUES ($1, $2, $3, $4)
+    `, [tempId, ip, userAgent, expiresAt]);
+
+    return { id: tempId };
+  }
+
+  async shareNote(userId: string | null, noteId: string, createShareNoteDto: CreateShareNoteDto) {
+    if (userId) {
+      const ownershipCheck = await this.db.query(
+        `SELECT id FROM user_notes WHERE id = $1 AND user_id = $2`,
+        [noteId, userId]
+      );
+      if (ownershipCheck.rows.length < 1) {
+        throw new BadRequestException("Note does not exist or you do not have permission.");
+      }
+    } else {
+      const tempIdCheck = await this.db.query(
+        `SELECT id FROM temp_note_ids WHERE id = $1 AND expires_at > NOW()`,
+        [noteId]
+      );
+      if (tempIdCheck.rows.length < 1) {
+        throw new BadRequestException("Invalid or expired session. Please refresh.");
+      }
+    }
+
+    const { id, iv, encrypted_title, encrypted_content, is_burn_after_read, expires_at } = createShareNoteDto;
+
     const query = `
-      INSERT INTO share_notes (
-        id, 
-        iv,
-        encrypted_title, 
-        encrypted_content, 
-        is_burn_after_read, 
-        expires_at,
-        created_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, NOW())
+      INSERT INTO share_notes (id, iv, encrypted_title, encrypted_content, is_burn_after_read, expires_at, created_at)
+      VALUES ($1, $2, $3, $4, $5, $6, NOW())
       RETURNING id, expires_at;
     `;
 
     try {
-      const values = [
-        id,
-        iv,
-        encrypted_title,
-        encrypted_content,
-        is_burn_after_read ?? false,
-        expires_at || null,
-      ];
-
-      const result = await this.db.query(query, values);
+      const result = await this.db.query(query, [
+        id, iv, encrypted_title, encrypted_content,
+        is_burn_after_read ?? false, expires_at || null
+      ]);
 
       return {
         success: true,
         shareId: result.rows[0].id,
-        expiresAt: result.rows[0].expires_at,
         message: 'A secure share link was successfully created.'
       };
     } catch (error) {

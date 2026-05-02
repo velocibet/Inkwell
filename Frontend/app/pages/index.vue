@@ -118,7 +118,7 @@ const steps = [
 
         <div class="nav-actions">
           <NuxtLink to="/login" class="nav-sign-in">Sign in</NuxtLink>
-          <NuxtLink to="/login" class="nav-cta">Get Started</NuxtLink>
+          <NuxtLink to="/quick" class="nav-cta">Get Started</NuxtLink>
         </div>
 
         <button class="nav-mobile-toggle" @click="isMobileMenuOpen = !isMobileMenuOpen" aria-label="Toggle menu">
@@ -140,7 +140,7 @@ const steps = [
         </a>
         <div class="nav-mobile-actions">
           <NuxtLink to="/login" class="nav-mobile-sign-in">Sign in</NuxtLink>
-          <NuxtLink to="/login" class="nav-mobile-cta">Get Started</NuxtLink>
+          <NuxtLink to="/quick" class="nav-mobile-cta">Get Started</NuxtLink>
         </div>
       </div>
     </nav>
@@ -163,7 +163,7 @@ const steps = [
         </p>
 
         <div class="hero-actions">
-          <NuxtLink to="/login" class="hero-cta-primary">
+          <NuxtLink to="/quick" class="hero-cta-primary">
             Start Writing Free
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="5" y1="12" x2="19" y2="12"/>
@@ -335,7 +335,7 @@ const steps = [
         </div>
 
         <div class="cta-actions">
-          <NuxtLink to="/login" class="cta-primary">
+          <NuxtLink to="/quick" class="cta-primary">
             Get started for free
           </NuxtLink>
           <a href="#" class="cta-secondary">

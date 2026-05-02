@@ -4,6 +4,7 @@ import { CreateNoteDto, UpdateNoteDto, CreateShareNoteDto } from './dto/create-n
 import { LoggedInGuard } from '../auth/auth.guard';
 import { User } from '../common/decorators/user.decorator';
 import { Public } from 'src/common/decorators/public.decorator';
+import { Ip, Headers } from '@nestjs/common';
 
 @Controller('notes')
 @UseGuards(LoggedInGuard)
@@ -66,9 +67,19 @@ export class NotesController {
     return this.notesService.restore(userId, id);
   }
 
+  @Public()
+  @Post('share/prepare')
+  async prepareGuestShare(
+    @Ip() ip: string,
+    @Headers('user-agent') userAgent: string,
+  ) {
+    return this.notesService.createTempNoteId(ip, userAgent);
+  }
+
+  @Public()
   @Post(':id/share')
   async shareNote(
-    @User('id') userId: string,
+    @User('id') userId: string | null,
     @Param('id') id: string,
     @Body() createShareNoteDto: CreateShareNoteDto
   ) {

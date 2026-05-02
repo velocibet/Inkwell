@@ -2,7 +2,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
   const authStore = useAuthStore()
   const userApi = useUserApi()
 
-  const publicPaths = ['/', '/login', '/privacy', '/terms']
+  const publicPaths = ['/', '/login', '/privacy', '/terms', '/quick']
   const isExactPublic = publicPaths.includes(to.path)
   const isSharePage = to.path.startsWith('/share/')
   const isPublic = isExactPublic || isSharePage

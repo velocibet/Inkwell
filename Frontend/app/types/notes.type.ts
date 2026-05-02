@@ -78,3 +78,7 @@ export interface SharedNoteResponse {
   content: string;
   is_burned: boolean;
 }
+
+export interface createTempNoteIdResponse {
+  id: string;
+}

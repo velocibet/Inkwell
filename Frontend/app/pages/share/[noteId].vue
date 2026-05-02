@@ -50,7 +50,7 @@ onMounted(async () => {
     <div v-else class="note-display">
       <header class="note-header">
         <h1>{{ title }}</h1>
-        <span v-if="isBurned" class="burn-tag">🔥 Self-destructed after reading</span>
+        <span v-if="isBurned" class="burn-tag">Self-destructed after reading</span>
       </header>
 
       <div class="divider" />

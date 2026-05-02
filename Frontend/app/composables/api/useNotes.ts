@@ -70,5 +70,12 @@ export const useNotesApi = () => {
          */
         getSharedNote: (shareId: string) =>
             api.get<SharedNoteResponse>(`/${shareId}/share`),
+
+        /**
+         * 비회원 공유용 임시 노트 Id 발급
+         * @returns 
+         */
+        createTempNoteId: () =>
+            api.post<createTempNoteIdResponse>('/share/prepare'),
     }
 };

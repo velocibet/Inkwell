@@ -39,6 +39,10 @@ const openShareModal = () => {
   showShareModal.value = true
 }
 
+const goBack = () => {
+  router.push('/notes')
+}
+
 const setup = async (id: string) => {
   if (!id || !editor.value) return
   isLoading.value = true
@@ -136,6 +140,7 @@ const triggerAutoSave = () => {
 
 onMounted(() => {
   setup(noteId.value)
+  editor.value?.commands.focus()
 })
 
 watch(
@@ -178,23 +183,16 @@ onBeforeUnmount(() => {
     </div>
 
     <header class="editor-header">
-      <div class="status-badge" :class="{ 'is-saving': isSaving }">
-        {{ isSaving ? 'Saving...' : 'Saved!' }}
+      <div class="header-left">
+        <button @click="goBack" class="back-btn">←</button>
+        <div class="status-badge" :class="{ 'is-saving': isSaving }">
+          {{ isSaving ? 'Saving...' : 'Saved' }}
+        </div>
       </div>
+
       <div class="header-actions">
-        <button class="action-btn" title="share" @click="openShareModal">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="18" cy="5" r="3"/>
-            <circle cx="6" cy="12" r="3"/>
-            <circle cx="18" cy="19" r="3"/>
-            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
-            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
-          </svg>
-          Share
-        </button>
-        <button class="action-btn primary" @click="saveNote" :disabled="isSaving">
-          Save
-        </button>
+        <button class="action-btn" @click="openShareModal">Share</button>
+        <button class="action-btn primary" @click="saveNote">Save</button>
       </div>
     </header>
 
@@ -364,6 +362,12 @@ onBeforeUnmount(() => {
   font-weight: 600;
 }
 
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .header-actions {
   display: flex;
   gap: 8px;
@@ -422,6 +426,7 @@ onBeforeUnmount(() => {
   margin: 0 auto;
   width: 100%;
   overflow-y: auto;
+  padding-bottom: 100px;
 }
 
 .title-section {
@@ -520,5 +525,36 @@ onBeforeUnmount(() => {
 
 :deep(.tiptap li) {
   margin-bottom: 0.5rem;
+}
+
+@media (max-width: 640px) {
+  .editor-header {
+    padding: 0 12px;
+  }
+
+  .note-editor-view {
+    padding: 20px 12px;
+    max-width: 100%;
+  }
+
+  .title-textarea {
+    font-size: 28px;
+  }
+
+  .editor-toolbar {
+    position: sticky;
+    bottom: 0;
+    top: auto;
+    border-top: 1px solid var(--color-gray-200);
+    border-radius: 0;
+  }
+}
+
+.back-btn {
+  font-size: 18px;
+  padding: 4px 8px;
+  border: none;
+  background: none;
+  cursor: pointer;
 }
 </style>
