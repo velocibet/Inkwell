@@ -2,6 +2,10 @@
 import { useEditor, EditorContent } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
 import CharacterCount from '@tiptap/extension-character-count'
+import Underline from '@tiptap/extension-underline'
+import TaskList from '@tiptap/extension-task-list'
+import TaskItem from '@tiptap/extension-task-item'
+import { TextStyle } from '@tiptap/extension-text-style'
 
 const notesApi = useNotesApi()
 const authStore = useAuthStore()
@@ -12,17 +16,65 @@ const route = useRoute()
 const noteId = computed(() => route.params.noteId as string)
 
 const noteTitle = ref<string>('')
-  
+
+const FontSize = TextStyle.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      fontSize: {
+        default: null,
+        parseHTML: element => element.style.fontSize.replace('px', ''),
+        renderHTML: attributes => {
+          if (!attributes.fontSize) return {}
+          return { style: `font-size: ${attributes.fontSize}px` }
+        },
+      },
+    }
+  },
+
+  addCommands() {
+    return {
+      ...this.parent?.(),
+      setFontSize: (fontSize: string) => ({ chain }) => {
+        return chain()
+          .setMark('textStyle', { fontSize })
+          .run()
+      },
+      unsetFontSize: () => ({ chain }) => {
+        return chain()
+          .setMark('textStyle', { fontSize: null })
+          .removeEmptyTextStyle()
+          .run()
+      },
+    }
+  },
+})
+
 const editor = useEditor({
   extensions: [
-    StarterKit,
-    CharacterCount
+    StarterKit.configure({
+      codeBlock: false,
+    }),
+    CharacterCount,
+    Underline,
+    FontSize,
+    TextStyle,
+    TaskList,
+    TaskItem.configure({ nested: true }),
   ],
   content: '',
   onUpdate: () => {
     triggerAutoSave()
   }
 })
+
+const setFontSize = (size: string) => {
+  if (size === 'default') {
+    editor.value?.chain().focus().unsetFontSize().run()
+  } else {
+    editor.value?.chain().focus().setFontSize(size).run()
+  }
+}
 
 const isLoading = ref(true)
 const isSaving = ref(false)
@@ -211,49 +263,40 @@ onBeforeUnmount(() => {
       </div>
 
       <div v-if="editor" class="editor-toolbar">
-        <button 
-          @click="editor.chain().focus().toggleBold().run()" 
-          :class="{ 'is-active': editor.isActive('bold') }"
-          class="toolbar-btn"
-          title="Bold"
-        >
-          <b>B</b>
-        </button>
-        <button 
-          @click="editor.chain().focus().toggleItalic().run()" 
-          :class="{ 'is-active': editor.isActive('italic') }"
-          class="toolbar-btn"
-          title="Tilting"
-        >
-          <i>I</i>
-        </button>
-        <button 
-          @click="editor.chain().focus().toggleUnderline().run()" 
-          :class="{ 'is-active': editor.isActive('underline') }"
-          class="toolbar-btn"
-          title="Underline"
-        >
-          <u>U</u>
-        </button>
-        
+        <select class="fontsize-select" @change="(e) => setFontSize((e.target as HTMLSelectElement).value)">
+          <option value="default">Size</option>
+          <option value="12">12px</option>
+          <option value="16">16px</option>
+          <option value="20">20px</option>
+          <option value="24">24px</option>
+          <option value="32">32px</option>
+        </select>
+
         <div class="divider"></div>
 
-        <!-- <button 
-          @click="editor.chain().focus().setParagraph().run()" 
-          :class="{ 'is-active': editor.isActive('paragraph') }"
-          class="toolbar-btn"
-          title="문단"
-        >
-          P
-        </button> -->
-        <button 
-          @click="editor.chain().focus().toggleBulletList().run()" 
-          :class="{ 'is-active': editor.isActive('bulletList') }"
-          class="toolbar-btn"
-          title="A bullet mark"
-        >
-          • List
-        </button>
+        <!-- 기본 서식 -->
+        <button @click="editor.chain().focus().toggleBold().run()" :class="{ 'is-active': editor.isActive('bold') }" class="toolbar-btn"><b>B</b></button>
+        <button @click="editor.chain().focus().toggleItalic().run()" :class="{ 'is-active': editor.isActive('italic') }" class="toolbar-btn"><i>I</i></button>
+        <button @click="editor.chain().focus().toggleUnderline().run()" :class="{ 'is-active': editor.isActive('underline') }" class="toolbar-btn"><u>U</u></button>
+
+        <div class="divider"></div>
+
+        <!-- 점 리스트 (Bullet List) -->
+        <button @click="editor.chain().focus().toggleBulletList().run()" :class="{ 'is-active': editor.isActive('bulletList') }" class="toolbar-btn" title="점 리스트">•</button>
+        
+        <!-- 숫자 리스트 (Ordered List) -->
+        <button @click="editor.chain().focus().toggleOrderedList().run()" :class="{ 'is-active': editor.isActive('orderedList') }" class="toolbar-btn" title="숫자 리스트">1.</button>
+        
+        <!-- 체크박스 (Task List) -->
+        <button @click="editor.chain().focus().toggleTaskList().run()" :class="{ 'is-active': editor.isActive('taskList') }" class="toolbar-btn" title="체크박스">☑</button>
+
+        <div class="divider"></div>
+
+        <!-- 인용구 (Blockquote) -->
+        <button @click="editor.chain().focus().toggleBlockquote().run()" :class="{ 'is-active': editor.isActive('blockquote') }" class="toolbar-btn" title="인용구">“</button>
+        
+        <!-- 코드 블록 (Code Block) -->
+        <button @click="editor.chain().focus().toggleCodeBlock().run()" :class="{ 'is-active': editor.isActive('codeBlock') }" class="toolbar-btn" title="코드 블록">&lt;/&gt;</button>
       </div>
 
       <div class="content-section">
@@ -556,5 +599,68 @@ onBeforeUnmount(() => {
   border: none;
   background: none;
   cursor: pointer;
+}
+
+.fontsize-select {
+  background: transparent;
+  border: 1px solid var(--color-gray-200);
+  border-radius: 4px;
+  padding: 2px 4px;
+  font-size: 13px;
+  outline: none;
+  cursor: pointer;
+}
+
+:deep(.tiptap ul[data-type="taskList"]) {
+  list-style: none;
+  padding: 0;
+}
+
+:deep(.tiptap ul[data-type="taskList"] li) {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+:deep(.tiptap ul[data-type="taskList"] input[type="checkbox"]) {
+  margin-top: 6px;
+  cursor: pointer;
+}
+
+:deep(.tiptap ol) {
+  padding-left: 1.5rem;
+  margin: 1rem 0;
+  list-style-type: decimal;
+}
+
+:deep(.tiptap blockquote) {
+  padding-left: 1.5rem;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  margin: 1.5rem 0;
+  border-left: 5px solid var(--color-primary, #42b883);
+  background-color: #f9f9f9;
+  color: #555;
+  font-style: italic;
+  line-height: 1.6;
+}
+
+:deep(.tiptap blockquote p) {
+  margin: 0;
+}
+:deep(.tiptap pre) {
+  background: #2d2d2d;
+  color: #f8f8f2;
+  font-family: 'JetBrainsMono', monospace;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  margin: 1rem 0;
+}
+
+:deep(.tiptap pre code) {
+  color: inherit;
+  padding: 0;
+  background: none;
+  font-size: 0.9rem;
 }
 </style>
